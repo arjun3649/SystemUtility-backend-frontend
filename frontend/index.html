@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Health Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+
+<body class="p-4 bg-gray-100 min-h-screen flex items-center justify-center">
+
+    <div class="bg-white shadow-xl rounded-lg p-6 w-full max-w-4xl">
+        <div class="flex items-center space-x-4 mb-6">
+            <svg class="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 19V6l2-2m2 2v13m-4-8h4m-4 8a2 2 0 002 2h2a2 2 0 002-2M11 5a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2z">
+                </path>
+            </svg>
+            <h1 class="text-3xl font-bold text-gray-800">System Health Dashboard</h1>
+        </div>
+
+        <!-- Health Check Legend -->
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-700 mb-2">Health Check Legend</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-gray-600 text-sm">
+                <div><span class="font-medium text-gray-800">Disk Encrypted:</span> Is the main hard drive encrypted?
+                </div>
+                <div><span class="font-medium text-gray-800">OS Up to Date:</span> Are there any pending operating
+                    system updates?</div>
+                <div><span class="font-medium text-gray-800">Antivirus Active:</span> Is the antivirus software running?
+                </div>
+                <div><span class="font-medium text-gray-800">Inactivity Sleep OK:</span> Is the machine configured to go
+                    to sleep after 10 minutes of inactivity?</div>
+            </div>
+        </div>
+
+        <!-- Table for displaying data -->
+        <div class="overflow-x-auto rounded-lg shadow-inner">
+            <table class="min-w-full bg-white border border-gray-200">
+                <thead>
+                    <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                        <th class="py-3 px-6 text-left">Machine ID</th>
+                        <th class="py-3 px-6 text-left">OS Info</th>
+                        <th class="py-3 px-6 text-center">Disk Encrypted</th>
+                        <th class="py-3 px-6 text-center">OS Up to Date</th>
+                        <th class="py-3 px-6 text-center">Antivirus Active</th>
+                        <th class="py-3 px-6 text-center">Sleep OK</th>
+                    </tr>
+                </thead>
+                <tbody class="text-gray-600 text-sm font-light" id="data-table-body">
+                    <!-- Data will be populated here by JavaScript -->
+                    <tr class="border-b border-gray-200">
+                        <td colspan="6" class="py-3 px-6 text-center">
+                            <span class="text-gray-500">Loading data...</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial data fetch
+            fetchData();
+            // Fetch data every 5 seconds
+            setInterval(fetchData, 5000);
+        });
+
+        async function fetchData() {
+            const tableBody = document.getElementById('data-table-body');
+            tableBody.innerHTML = ''; // Clear loading message
+
+            try {
+                const response = await fetch('http://localhost:8000/api/machines');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+
+                if (data.length === 0) {
+                    const row = `
+                        <tr class="border-b border-gray-200">
+                            <td colspan="6" class="py-3 px-6 text-center text-gray-500">
+                                No health data available. Please run the client script.
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML = row;
+                } else {
+                    data.forEach(item => {
+                        const row = `
+                            <tr class="border-b border-gray-200 hover:bg-gray-100">
+                                <td class="py-3 px-6 text-left whitespace-nowrap">${item.machine_id.substring(0, 10)}...</td>
+                                <td class="py-3 px-6 text-left">${item.os_info}</td>
+                                <td class="py-3 px-6 text-center">
+                                    <span class="p-1 rounded-full ${item.disk_encrypted ? 'bg-green-200 text-green-600' : 'bg-red-200 text-red-600'}">
+                                        ${item.disk_encrypted ? 'Yes' : 'No'}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-6 text-center">
+                                    <span class="p-1 rounded-full ${item.os_up_to_date ? 'bg-green-200 text-green-600' : 'bg-red-200 text-red-600'}">
+                                        ${item.os_up_to_date ? 'Yes' : 'No'}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-6 text-center">
+                                    <span class="p-1 rounded-full ${item.antivirus_active ? 'bg-green-200 text-green-600' : 'bg-red-200 text-red-600'}">
+                                        ${item.antivirus_active ? 'Yes' : 'No'}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-6 text-center">
+                                    <span class="p-1 rounded-full ${item.inactivity_sleep_ok ? 'bg-green-200 text-green-600' : 'bg-red-200 text-red-600'}">
+                                        ${item.inactivity_sleep_ok ? 'Yes' : 'No'}
+                                    </span>
+                                </td>
+                            </tr>
+                        `;
+                        tableBody.innerHTML += row;
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                const row = `
+                    <tr class="border-b border-gray-200">
+                        <td colspan="6" class="py-3 px-6 text-center text-red-500">
+                            Failed to fetch data. Please ensure the backend is running.
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML = row;
+            }
+        }
+    </script>
+</body>
+
+</html>
